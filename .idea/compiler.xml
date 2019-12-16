@@ -8,6 +8,7 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="spring-boot-sample-web-ui" />
+        <module name="Handson4" />
       </profile>
     </annotationProcessing>
   </component>

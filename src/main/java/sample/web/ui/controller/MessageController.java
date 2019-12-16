@@ -14,72 +14,68 @@
 package sample.web.ui.controller;
 
 import javax.validation.Valid;
+import java.util.*;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import sample.web.ui.domain.Message;
-import sample.web.ui.domain.Order;
-import sample.web.ui.domain.Product;
-import sample.web.ui.domain.ProductCatalog;
+import sample.web.ui.domain.*;
 import sample.web.ui.repository.MessageRepository;
-import sample.web.ui.repository.OrderRepository;
+import sample.web.ui.repository.BaseOrderRepository;
 import sample.web.ui.repository.ProductCatalogRepository;
-import sample.web.ui.repository.ProductRepository;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import sample.web.ui.repository.ProductRepository;
 
-import java.util.Optional;
-
-
+/**
+ * @author Kevin Meeuwessen
+ */
 @Controller
 @RequestMapping("/")
 public class MessageController {
-	private final MessageRepository messageRepository;
-	private final OrderRepository orderRepository;
-	private final ProductCatalogRepository productCatalogRepository;
 
-	// constructor dependency injection
-	@Autowired
-	public MessageController(MessageRepository messageRepository,
-							 OrderRepository orderRepository,
-							 ProductCatalogRepository productCatalogRepository) {
-		this.messageRepository = messageRepository;
-		this.orderRepository = orderRepository;
-		this.productCatalogRepository = productCatalogRepository;
-
-	}
+    private final MessageRepository messageRepository;
+    private final BaseOrderRepository<Order> orderRepository;
+    private final BaseOrderRepository<OrderOption> orderOptionRepository;
+    private final ProductCatalogRepository productCatalogRepository;
 
 
+    // constructor dependency injection
+    public MessageController(MessageRepository messageRepository,
+                             BaseOrderRepository<Order> orderRepository,
+                             BaseOrderRepository<OrderOption> orderOptionRepository,
+                             ProductCatalogRepository productCatalogRepository) {
+        this.messageRepository = messageRepository;
+        this.orderRepository = orderRepository;
+        this.orderOptionRepository = orderOptionRepository;
+        this.productCatalogRepository = productCatalogRepository;
+    }
 
-	public void createProductCatalogAndProducts() {
+    public void createProductCatalogAndProducts() {
 
-		// build product catalog and two products
+        // build product catalog and two products
 
-		ProductCatalog productCatalog = new ProductCatalog();
+        ProductCatalog productCatalog = new ProductCatalog();
 
-		// right-side productCatalog: without id; left-side productCatalog: with id
-		// (needed because of autoincrement)
-		productCatalog = productCatalogRepository.save(productCatalog);
+        // right-side productCatalog: without id; left-side productCatalog: with id
+        // (needed because of autoincrement)
+        productCatalog = productCatalogRepository.save(productCatalog);
 
-		Product prod1 = new Product("schroefje", 2);
-		Product prod2 = new Product("moertje", 1);
+        Product prod1 = new Product("schroefje", 2);
+        Product prod2 = new Product("moertje", 1);
 
-		// add two products
-		productCatalog.add(prod1);
-		productCatalog.add(prod2);
+        // add two products
+        productCatalog.add(prod1);
+        productCatalog.add(prod2);
 
-	}
+    }
 
-    public void createOrder() {
+    private void createOrder() {
         // get the productCatalog
         Optional<ProductCatalog> productCatalog = productCatalogRepository.findById(1L);
 
@@ -93,6 +89,18 @@ public class MessageController {
         Order order = new Order();
         order = orderRepository.save(order);
         order.add(prodCopy);
+    }
+
+    private void decorateOrder() {
+        Optional<Order> concreteOrder  = orderRepository.findById(4L);
+        OrderOption decoratedOrder1 = new OrderOption("wrapping paper", 7, concreteOrder.get());
+        orderOptionRepository.save(decoratedOrder1);
+        OrderOption decoratedOrder2 = new OrderOption("nice box", 5, decoratedOrder1);
+        orderOptionRepository.save(decoratedOrder2);
+        OrderOption decoratedOrder3 = new OrderOption("fast delivery", 12, decoratedOrder2);
+        orderOptionRepository.save(decoratedOrder3);
+        System.out.println("***** content of the order: " + decoratedOrder3);
+        System.out.println("***** price of the order: " + decoratedOrder3.price());
     }
 
     @Transactional
@@ -110,11 +118,13 @@ public class MessageController {
         return new ModelAndView("messages/view", "message", message);
     }
 
+
     @Transactional
     @GetMapping(params = "form")
     public String createForm(@ModelAttribute Message message) {
 
         createOrder();
+        decorateOrder();
 
         return "messages/form";
     }
@@ -146,8 +156,5 @@ public class MessageController {
     public ModelAndView modifyForm(@PathVariable("id") Message message) {
         return new ModelAndView("messages/form", "message", message);
     }
-
-
-
 
 }
