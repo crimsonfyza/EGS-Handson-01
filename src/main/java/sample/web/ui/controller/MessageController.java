@@ -32,6 +32,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import sample.web.ui.repository.ProductRepository;
 
 /**
  * @author Kevin Meeuwessen
@@ -44,44 +45,59 @@ public class MessageController {
     private final BaseOrderRepository<Order> orderRepository;
     private final BaseOrderRepository<OrderOption> orderOptionRepository;
     private final ProductCatalogRepository productCatalogRepository;
+    private final ProductRepository productRepository;
 
 
     // constructor dependency injection
     public MessageController(MessageRepository messageRepository,
                              BaseOrderRepository<Order> orderRepository,
                              BaseOrderRepository<OrderOption> orderOptionRepository,
-                             ProductCatalogRepository productCatalogRepository) {
+                             ProductCatalogRepository productCatalogRepository,
+                             ProductRepository productRepository) {
         this.messageRepository = messageRepository;
         this.orderRepository = orderRepository;
         this.orderOptionRepository = orderOptionRepository;
         this.productCatalogRepository = productCatalogRepository;
+        this.productRepository = productRepository;
     }
 
-    public void createProductCatalogAndProducts() {
+    private void createProductCatalogAndProducts() {
 
         // build product catalog and two products
 
         ProductCatalog productCatalog = new ProductCatalog();
 
-        // right-side productCatalog: without id; left-side productCatalog: with id
-        // (needed because of autoincrement)
+        // right productCatalog: without id; left productCatalog: with id
+        // (needed because of auto increment)
         productCatalog = productCatalogRepository.save(productCatalog);
+
+        System.out.println("#product in product catalog: " +
+                productCatalog.getProducts().size());
 
         Product prod1 = new Product("schroefje", 2);
         Product prod2 = new Product("moertje", 1);
+        // a product must have an id to be stored in product catalog, so save
+        // explicitly
+        prod1 = productRepository.save(prod1);
+        prod2 = productRepository.save(prod2);
 
         // add two products
-        productCatalog.add(prod1);
-        productCatalog.add(prod2);
+        productCatalog.add(prod1, 5);
+        productCatalog.add(prod2, 5);
 
+        try {
+            Thread.sleep(1000);
+        } catch(InterruptedException e) {}
     }
+
+
 
     private void createOrder() {
         // get the productCatalog
         Optional<ProductCatalog> productCatalog = productCatalogRepository.findById(1L);
 
         // "find" a product in the catalog and add it to the order
-        Product prod = productCatalog.get().find(2L);
+        Product prod = productCatalog.get().decrementStock(2L);
 
         // make a copy of the product (the copy has no id yet)
         // why a copy is made?
@@ -90,7 +106,10 @@ public class MessageController {
         Order order = new Order();
         order = orderRepository.save(order);
         order.add(prodCopy);
+//
+//        System.exit(0);
     }
+
 
     private void decorateOrder() {
         Optional<Order> concreteOrder  = orderRepository.findById(4L);
@@ -126,7 +145,7 @@ public class MessageController {
     public String createForm(@ModelAttribute Message message) {
 
         createOrder();
-        decorateOrder();
+//        decorateOrder();
 
         return "messages/form";
     }

@@ -1,7 +1,9 @@
 package sample.web.ui.domain;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -9,12 +11,12 @@ import javax.persistence.Id;
 import javax.persistence.OneToMany;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Getter @Setter
+@Getter
+@Setter
 @NoArgsConstructor
 public class ProductCatalog {
 
@@ -22,20 +24,26 @@ public class ProductCatalog {
     @GeneratedValue
     private Long id;
 
-
     @OneToMany(cascade = javax.persistence.CascadeType.ALL)
-    private List<Product> products = new ArrayList<>();
+    private Map<Long, StockItem> products = new HashMap<>();
 
+    // add new product to catalog and indicate number of stock items
+    // precondition: product must have an id!
+    public void add(Product product, int quantity) {
+        assert(product.getId() != null);
 
-    public void add(Product p) {
-        products.add(p);
+        products.put(product.getId(), new StockItem(product, quantity));
     }
 
-    public Product find(Long id) {
-        for(Product p : products) {
-            if(p.getId() == id)
-                return p;
-        }
-        return null;
+    // precondition: product in catalog
+    // precondition: at least one product in stock
+    public Product decrementStock(Long productId) {
+        assert(products.containsKey(productId));
+        assert(products.get(productId).getQuantity() >= 0);
+
+        StockItem si = products.get(productId);
+        products.put(productId, si.decrementStock());
+        return si.getProduct();
     }
+
 }
