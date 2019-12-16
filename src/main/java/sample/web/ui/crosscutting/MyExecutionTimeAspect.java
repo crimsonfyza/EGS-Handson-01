@@ -20,7 +20,7 @@ public class MyExecutionTimeAspect {
         System.out.println("(AOP-myExecTime) Starting timing method " + joinPoint.getSignature());
         Object retVal = joinPoint.proceed();
         long duration = System.currentTimeMillis() - startMillis;
-        System.out.println("(AOP-myExecTime) Call to " + joinPoint.getSignature() + " took " + duration + " ms");
+        System.out.println("(AOP-myExecTime) Call to " + joinPoint.getSignature() + " took " + duration + " mss");
         return retVal;
 
     }
