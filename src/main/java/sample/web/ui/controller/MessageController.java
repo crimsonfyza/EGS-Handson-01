@@ -17,6 +17,7 @@ import javax.validation.Valid;
 import java.util.*;
 
 import org.springframework.transaction.annotation.Transactional;
+import sample.web.ui.crosscutting.MyExecutionTime;
 import sample.web.ui.domain.*;
 import sample.web.ui.repository.MessageRepository;
 import sample.web.ui.repository.BaseOrderRepository;
@@ -105,6 +106,7 @@ public class MessageController {
 
     @Transactional
     @GetMapping
+    @MyExecutionTime
     public ModelAndView list() {
 
         createProductCatalogAndProducts();
